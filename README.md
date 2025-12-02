@@ -7,8 +7,10 @@
 ### 文件说明
 
 - `四级高频词汇.pdf` - 原始PDF格式的四级高频词汇表
-- `四级高频词汇.csv` - CSV格式的四级高频词汇表（773个词条）
+- `四级高频词汇.txt` - TXT格式的四级高频词汇表（1417个词条）
+- `四级高频词汇.csv` - CSV格式的四级高频词汇表（1417个词条）
 - `convert_pdf_to_csv.py` - PDF转CSV的转换脚本
+- `convert_txt_to_csv.py` - TXT转CSV的转换脚本
 
 ### CSV格式说明
 
@@ -19,9 +21,20 @@ CSV文件包含以下三列：
 
 ### 使用方法
 
-CSV文件可以使用Excel、Google Sheets或任何支持CSV格式的工具打开，方便查阅和学习。
+CSV文件可以使用Excel、Google Sheets、Notion或任何支持CSV格式的工具打开，方便查阅和学习。
 
-如需重新生成CSV文件，可运行：
+#### 从TXT文件生成CSV
+
+如需从TXT文件生成CSV文件，可运行：
+```bash
+python3 convert_txt_to_csv.py
+```
+
+这将把 `四级高频词汇.txt` 转换为 `四级高频词汇.csv`，适合导入到Notion等工具中。
+
+#### 从PDF文件生成CSV
+
+如需从PDF文件重新生成CSV文件，可运行：
 ```bash
 python3 convert_pdf_to_csv.py
 ```
