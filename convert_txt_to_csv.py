@@ -37,8 +37,9 @@ def convert_txt_to_csv(input_path, output_path):
                     word = parts[0].strip()
                     pos = parts[1].strip()
                     writer.writerow([word, pos, ''])
-    
-    return True
+                elif len(parts) == 1:
+                    # Malformed line with only 1 part, skip it
+                    continue
 
 def main():
     input_file = '四级高频词汇.txt'
@@ -49,24 +50,21 @@ def main():
     try:
         convert_txt_to_csv(input_file, output_file)
         
-        # Count entries in the output file
-        with open(output_file, 'r', encoding='utf-8') as f:
-            line_count = sum(1 for line in f)
-        
-        print(f"✓ Successfully converted {line_count} entries to CSV format")
-        print(f"✓ Output file: {output_file}")
-        
-        # Show first few entries
+        # Read output file once and display info
         print("\nFirst 5 entries:")
         with open(output_file, 'r', encoding='utf-8') as f:
             reader = csv.reader(f)
+            rows = []
             for i, row in enumerate(reader):
-                if i >= 5:
-                    break
-                if len(row) >= 3:
-                    print(f"{i+1}. {row[0]} ({row[1]}) - {row[2]}")
-                elif len(row) >= 2:
-                    print(f"{i+1}. {row[0]} ({row[1]})")
+                rows.append(row)
+                if i < 5:
+                    if len(row) >= 3:
+                        print(f"{i+1}. {row[0]} ({row[1]}) - {row[2]}")
+                    elif len(row) >= 2:
+                        print(f"{i+1}. {row[0]} ({row[1]})")
+        
+        print(f"\n✓ Successfully converted {len(rows)} entries to CSV format")
+        print(f"✓ Output file: {output_file}")
         
         return 0
     except FileNotFoundError:
