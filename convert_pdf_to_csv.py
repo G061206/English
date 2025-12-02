@@ -5,6 +5,8 @@ Convert CET-4 vocabulary PDF to CSV format
 import pdfplumber
 import csv
 import re
+import sys
+import argparse
 
 def extract_vocabulary_from_pdf(pdf_path):
     """Extract vocabulary entries from PDF"""
@@ -27,9 +29,18 @@ def parse_vocabulary(text):
     seen_words = set()  # Track seen words to avoid duplicates
     
     # Pattern to match vocabulary entries more precisely
-    # Word + part of speech + definition (Chinese characters, punctuation)
-    # Looking ahead to the next word entry or end of string
-    pattern = r'([a-zA-Z]+(?:\([a-zA-Z]+\))?)\s*(n|v|a|vi|vt|ad|prep|conj|pron|num|int|aux)[\.．]\s*([^a-zA-Z]+?)(?=\s*[a-zA-Z]+\s*(?:n|v|a|vi|vt|ad|prep|conj|pron|num|int|aux)[\.．]|\s*$)'
+    # Components:
+    # 1. Word: English letters, may include parentheses for variants like "cigaret(te)"
+    # 2. Part of speech: Common abbreviations (n, v, a, vi, vt, ad, prep, conj, etc.)
+    # 3. Definition: Non-English characters (Chinese text and punctuation)
+    # Lookahead ensures we stop at the next word entry
+    pattern = (
+        r'([a-zA-Z]+(?:\([a-zA-Z]+\))?)'  # Word
+        r'\s*(n|v|a|vi|vt|ad|prep|conj|pron|num|int|aux)'  # Part of speech
+        r'[\.．]\s*'  # Separator (dot)
+        r'([^a-zA-Z]+?)'  # Definition
+        r'(?=\s*[a-zA-Z]+\s*(?:n|v|a|vi|vt|ad|prep|conj|pron|num|int|aux)[\.．]|\s*$)'  # Lookahead
+    )
     
     matches = re.findall(pattern, text, re.DOTALL)
     
@@ -62,20 +73,9 @@ def parse_vocabulary(text):
         # Remove trailing punctuation and incomplete fragments
         definition = re.sub(r'[；，。、\s]+$', '', definition)
         
-        # Remove common incomplete Chinese fragments at the end
-        # These are often from the two-column layout split
-        # Remove trailing fragments that don't form complete meanings
-        incomplete_patterns = [
-            r'\s+的$', r'\s+心的$', r'\s+近$', r'\s+奏$', 
-            r'\s+援助$', r'\s+文摘$', r'\s+兼并$', r'\s+爱好者$',
-            r'\s+报警；使惊慌$', r'\s+失$', r'\s+[一二三四五六七八九十]$',
-            r'\s+国公司$', r'\s+国$', r'\s+公司$', r'\s+企业$',
-            r'\s+人$', r'\s+物$', r'\s+事$', r'\s+处$'
-        ]
-        for pattern_str in incomplete_patterns:
-            definition = re.sub(pattern_str, '', definition)
-        
-        # If definition ends with a space followed by 1-3 Chinese characters, it's likely a fragment
+        # Remove trailing fragments from two-column layout
+        # These are common incomplete phrases that appear due to PDF layout extraction
+        # General approach: remove space + 1-3 trailing Chinese characters that likely don't complete the meaning
         definition = re.sub(r'\s+[\u4e00-\u9fff]{1,3}$', '', definition)
         
         # Only add if definition is not empty and contains Chinese characters
@@ -103,11 +103,34 @@ def save_to_csv(vocabulary, output_path):
             writer.writerow(entry)
 
 def main():
-    pdf_path = "四级高频词汇.pdf"
-    output_path = "四级高频词汇.csv"
+    parser = argparse.ArgumentParser(
+        description='Convert CET-4 vocabulary PDF to CSV format'
+    )
+    parser.add_argument(
+        '-i', '--input',
+        default='四级高频词汇.pdf',
+        help='Input PDF file path (default: 四级高频词汇.pdf)'
+    )
+    parser.add_argument(
+        '-o', '--output',
+        default='四级高频词汇.csv',
+        help='Output CSV file path (default: 四级高频词汇.csv)'
+    )
+    
+    args = parser.parse_args()
+    
+    pdf_path = args.input
+    output_path = args.output
     
     print(f"Reading PDF: {pdf_path}")
-    text = extract_vocabulary_from_pdf(pdf_path)
+    try:
+        text = extract_vocabulary_from_pdf(pdf_path)
+    except FileNotFoundError:
+        print(f"Error: PDF file not found: {pdf_path}")
+        sys.exit(1)
+    except Exception as e:
+        print(f"Error reading PDF: {e}")
+        sys.exit(1)
     
     print(f"Parsing vocabulary...")
     vocabulary = parse_vocabulary(text)
@@ -115,7 +138,11 @@ def main():
     print(f"Found {len(vocabulary)} vocabulary entries")
     
     print(f"Saving to CSV: {output_path}")
-    save_to_csv(vocabulary, output_path)
+    try:
+        save_to_csv(vocabulary, output_path)
+    except Exception as e:
+        print(f"Error saving CSV: {e}")
+        sys.exit(1)
     
     print(f"Done! CSV file created with {len(vocabulary)} entries")
     

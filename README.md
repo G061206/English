@@ -25,3 +25,8 @@ CSV文件可以使用Excel、Google Sheets或任何支持CSV格式的工具打�
 ```bash
 python3 convert_pdf_to_csv.py
 ```
+
+脚本支持自定义输入输出路径：
+```bash
+python3 convert_pdf_to_csv.py -i input.pdf -o output.csv
+```
